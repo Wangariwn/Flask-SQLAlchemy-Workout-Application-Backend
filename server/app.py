@@ -67,7 +67,23 @@ def get_workout(id):
 @app.route("/workouts", methods=["POST"])
 def create_workout():
     """Create a workout"""
-    return make_response({"message": "Create a workout"}, 201)
+    json_data = request.get_json()
+    if not json_data:
+        return error_response("Request body must be JSON")
+
+    try:
+        workout = workout_schema.load(json_data)
+        db.session.add(workout)
+        db.session.commit()
+        return make_response(workout_schema.dump(workout), 201)
+    except ValidationError as err:
+        return error_response(err.messages)
+    except ValueError as err:
+        db.session.rollback()
+        return error_response(str(err))
+    except IntegrityError:
+        db.session.rollback()
+        return error_response("Could not create workout due to a database constraint")
 
 
 @app.route("/workouts/<int:id>", methods=["DELETE"])
