@@ -46,7 +46,10 @@ class Exercise(db.Model, SerializerMixin):
     def validate_name(self, key, name):
         if not name or not str(name).strip():
             raise ValueError("Exercise name must be a non-empty string")
-        return str(name).strip()
+        cleaned = str(name).strip()
+        if len(cleaned) > 100:
+            raise ValueError("Exercise name cannot exceed 100 characters")
+        return cleaned
 
     @validates("category")
     def validate_category(self, key, category):
@@ -72,6 +75,10 @@ class Workout(db.Model, SerializerMixin):
         db.CheckConstraint(
             "duration_minutes > 0",
             name="ck_workouts_duration_positive",
+        ),
+        db.CheckConstraint(
+            "duration_minutes <= 1440",
+            name="ck_workouts_duration_max",
         ),
     )
 
@@ -107,7 +114,15 @@ class Workout(db.Model, SerializerMixin):
             raise ValueError("duration_minutes must be an integer")
         if duration_minutes <= 0:
             raise ValueError("duration_minutes must be greater than 0")
+        if duration_minutes > 1440:
+            raise ValueError("duration_minutes cannot exceed 1440 (24 hours)")
         return duration_minutes
+
+    @validates("notes")
+    def validate_notes(self, key, notes):
+        if notes is not None and len(notes) > 1000:
+            raise ValueError("notes cannot exceed 1000 characters")
+        return notes
 
     def __repr__(self):
         return f"<Workout {self.id}: {self.date}>"
@@ -126,6 +141,10 @@ class WorkoutExercise(db.Model, SerializerMixin):
         db.CheckConstraint(
             "duration_seconds >= 0",
             name="ck_workout_exercises_duration_nonneg",
+        ),
+        db.CheckConstraint(
+            "reps > 0 OR sets > 0 OR duration_seconds > 0",
+            name="ck_workout_exercises_has_activity",
         ),
     )
 
@@ -161,6 +180,18 @@ class WorkoutExercise(db.Model, SerializerMixin):
         if value < 0:
             raise ValueError(f"{key} must be greater than or equal to 0")
         return value
+
+    @validates("workout_id")
+    def validate_workout_id(self, key, workout_id):
+        if workout_id is None:
+            raise ValueError("workout_id is required")
+        return workout_id
+
+    @validates("exercise_id")
+    def validate_exercise_id(self, key, exercise_id):
+        if exercise_id is None:
+            raise ValueError("exercise_id is required")
+        return exercise_id
 
     def __repr__(self):
         return (
