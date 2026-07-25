@@ -113,10 +113,22 @@ def get_exercises():
 @app.route("/exercises/<int:id>", methods=["GET"])
 def get_exercise(id):
     """Show an exercise and associated workouts"""
-    return make_response(
-        {"message": f"Show exercise {id} with associated workouts"},
-        200,
-    )
+    exercise = db.session.get(Exercise, id)
+    if not exercise:
+        return error_response("Exercise not found", 404)
+
+    data = exercise_schema.dump(exercise)
+    data["workouts"] = [
+        {
+            **workout_schema.dump(we.workout),
+            "reps": we.reps,
+            "sets": we.sets,
+            "duration_seconds": we.duration_seconds,
+            "workout_exercise_id": we.id,
+        }
+        for we in exercise.workout_exercises
+    ]
+    return make_response(data, 200)
 
 
 @app.route("/exercises", methods=["POST"])
