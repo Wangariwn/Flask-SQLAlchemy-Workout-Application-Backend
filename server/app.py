@@ -158,6 +158,12 @@ def delete_exercise(id):
     """Delete an exercise
     Stretch goal: delete associated WorkoutExercises
     """
+    exercise = db.session.get(Exercise, id)
+    if not exercise:
+        return error_response("Exercise not found", 404)
+
+    db.session.delete(exercise)
+    db.session.commit()
     return make_response("", 204)
 
 
