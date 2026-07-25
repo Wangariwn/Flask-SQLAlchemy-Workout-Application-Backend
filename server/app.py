@@ -176,15 +176,35 @@ def delete_exercise(id):
 )
 def add_exercise_to_workout(workout_id, exercise_id):
     """Add an exercise to a workout, including reps/sets/duration"""
-    return make_response(
-        {
-            "message": (
-                f"Add exercise {exercise_id} to workout {workout_id} "
-                "with reps/sets/duration"
-            )
-        },
-        201,
-    )
+    workout = db.session.get(Workout, workout_id)
+    if not workout:
+        return error_response("Workout not found", 404)
+
+    exercise = db.session.get(Exercise, exercise_id)
+    if not exercise:
+        return error_response("Exercise not found", 404)
+
+    json_data = request.get_json()
+    if not json_data:
+        return error_response("Request body must be JSON")
+
+    try:
+        workout_exercise = workout_exercise_schema.load(json_data)
+        workout_exercise.workout_id = workout_id
+        workout_exercise.exercise_id = exercise_id
+        db.session.add(workout_exercise)
+        db.session.commit()
+        return make_response(workout_exercise_schema.dump(workout_exercise), 201)
+    except ValidationError as err:
+        return error_response(err.messages)
+    except ValueError as err:
+        db.session.rollback()
+        return error_response(str(err))
+    except IntegrityError:
+        db.session.rollback()
+        return error_response(
+            "This exercise is already added to the workout, or a constraint failed"
+        )
 
 
 if __name__ == "__main__":
