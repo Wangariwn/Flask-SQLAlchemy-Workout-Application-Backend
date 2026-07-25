@@ -60,7 +60,7 @@ A Flask REST API for managing workouts and exercises. Workouts and exercises hav
 | `DELETE` | `/exercises/<id>` | Delete an exercise (and associated WorkoutExercises) |
 | `POST` | `/workouts/<workout_id>/exercises/<exercise_id>/workout_exercises` | Add an exercise to a workout |
 
-## Setup
+## Installation
 
 ```bash
 # Install dependencies
@@ -69,16 +69,30 @@ pipenv install
 # Activate the virtual environment
 pipenv shell
 
-# From the server directory, create and apply migrations
+# From the server directory, apply migrations
 cd server
-flask db init
-flask db migrate -m "create tables"
+export FLASK_APP=app.py
 flask db upgrade
+
+# (Only if migrations/ does not exist yet:)
+# flask db init
+# flask db migrate -m "create tables"
+# flask db upgrade
 
 # Seed sample data
 python seed.py
+```
 
-# Run the server
+## Run
+
+```bash
+cd server
+export FLASK_APP=app.py
+
+# Recommended
+flask run --port=5555
+
+# Or
 python app.py
 ```
 
