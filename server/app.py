@@ -1,15 +1,31 @@
-from flask import Flask, make_response
+from flask import Flask, make_response, request
 from flask_migrate import Migrate
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from models import *
+from schemas import (
+    exercise_schema,
+    exercises_schema,
+    workout_schema,
+    workouts_schema,
+    workout_exercise_schema,
+)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.json.compact = False
 
 migrate = Migrate(app, db)
 
 db.init_app(app)
+
+
+def error_response(message, status=400):
+    if isinstance(message, str):
+        message = [message]
+    return make_response({"errors": message}, status)
 
 
 # Define Routes here
@@ -21,7 +37,8 @@ db.init_app(app)
 @app.route("/workouts", methods=["GET"])
 def get_workouts():
     """List all workouts"""
-    return make_response({"message": "List all workouts"}, 200)
+    workouts = Workout.query.all()
+    return make_response(workouts_schema.dump(workouts), 200)
 
 
 @app.route("/workouts/<int:id>", methods=["GET"])
