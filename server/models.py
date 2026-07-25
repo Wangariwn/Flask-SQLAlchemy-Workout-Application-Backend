@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
-from marshmallow import Schema, fields, validate, validates as ma_validates, ValidationError
 
 db = SQLAlchemy()
 
@@ -198,69 +197,3 @@ class WorkoutExercise(db.Model, SerializerMixin):
             f"<WorkoutExercise workout={self.workout_id} "
             f"exercise={self.exercise_id}>"
         )
-
-
-# ---------- Marshmallow Schemas (schema-level validations) ----------
-
-
-class ExerciseSchema(Schema):
-    id = fields.Int(dump_only=True)
-    name = fields.Str(
-        required=True,
-        validate=validate.Length(min=1, max=100),
-    )
-    category = fields.Str(
-        required=True,
-        validate=validate.OneOf(VALID_CATEGORIES),
-    )
-    equipment_needed = fields.Bool(required=True)
-
-    @ma_validates("name")
-    def validate_name_not_blank(self, value, **kwargs):
-        if not value or not value.strip():
-            raise ValidationError("Name cannot be blank")
-
-
-class WorkoutSchema(Schema):
-    id = fields.Int(dump_only=True)
-    date = fields.Date(required=True)
-    duration_minutes = fields.Int(
-        required=True,
-        validate=validate.Range(min=1, error="duration_minutes must be at least 1"),
-    )
-    notes = fields.Str(allow_none=True, load_default=None)
-
-    @ma_validates("notes")
-    def validate_notes_length(self, value, **kwargs):
-        if value is not None and len(value) > 1000:
-            raise ValidationError("Notes cannot exceed 1000 characters")
-
-
-class WorkoutExerciseSchema(Schema):
-    id = fields.Int(dump_only=True)
-    workout_id = fields.Int(dump_only=True)
-    exercise_id = fields.Int(dump_only=True)
-    reps = fields.Int(
-        required=True,
-        validate=validate.Range(min=0),
-    )
-    sets = fields.Int(
-        required=True,
-        validate=validate.Range(min=0),
-    )
-    duration_seconds = fields.Int(
-        required=True,
-        validate=validate.Range(min=0),
-    )
-
-    @ma_validates("reps")
-    def validate_reps_integer(self, value, **kwargs):
-        if value is None:
-            raise ValidationError("reps is required")
-
-
-exercise_schema = ExerciseSchema()
-exercises_schema = ExerciseSchema(many=True)
-workout_schema = WorkoutSchema()
-workouts_schema = WorkoutSchema(many=True)
-workout_exercise_schema = WorkoutExerciseSchema()
