@@ -7,59 +7,46 @@ from models import db, Exercise, Workout, WorkoutExercise
 
 with app.app_context():
     # reset data and add new example data, committing to db
+    print("Clearing tables...")
     WorkoutExercise.query.delete()
     Workout.query.delete()
     Exercise.query.delete()
-
-    pushups = Exercise(
-        name="Push-ups",
-        category="Strength",
-        equipment_needed=False,
-    )
-    running = Exercise(
-        name="Running",
-        category="Cardio",
-        equipment_needed=False,
-    )
-    yoga = Exercise(
-        name="Yoga Flow",
-        category="Flexibility",
-        equipment_needed=False,
-    )
-    deadlift = Exercise(
-        name="Deadlift",
-        category="Strength",
-        equipment_needed=True,
-    )
-    planks = Exercise(
-        name="Plank Hold",
-        category="Balance",
-        equipment_needed=False,
-    )
-
-    db.session.add_all([pushups, running, yoga, deadlift, planks])
     db.session.commit()
 
-    workout_one = Workout(
-        date=date(2026, 7, 20),
-        duration_minutes=45,
-        notes="Morning strength session",
-    )
-    workout_two = Workout(
-        date=date(2026, 7, 22),
-        duration_minutes=30,
-        notes="Cardio and mobility",
-    )
-    workout_three = Workout(
-        date=date(2026, 7, 25),
-        duration_minutes=60,
-        notes="Full body day",
-    )
-
-    db.session.add_all([workout_one, workout_two, workout_three])
+    exercises = [
+        Exercise(name="Push-ups", category="Strength", equipment_needed=False),
+        Exercise(name="Running", category="Cardio", equipment_needed=False),
+        Exercise(name="Yoga Flow", category="Flexibility", equipment_needed=False),
+        Exercise(name="Deadlift", category="Strength", equipment_needed=True),
+        Exercise(name="Plank Hold", category="Balance", equipment_needed=False),
+    ]
+    db.session.add_all(exercises)
     db.session.commit()
 
-    links = [
+    workouts = [
+        Workout(
+            date=date(2026, 7, 20),
+            duration_minutes=45,
+            notes="Morning strength session",
+        ),
+        Workout(
+            date=date(2026, 7, 22),
+            duration_minutes=30,
+            notes="Cardio and mobility",
+        ),
+        Workout(
+            date=date(2026, 7, 25),
+            duration_minutes=60,
+            notes="Full body day",
+        ),
+    ]
+    db.session.add_all(workouts)
+    db.session.commit()
+
+    pushups, running, yoga, deadlift, planks = exercises
+    workout_one, workout_two, workout_three = workouts
+
+    workout_exercises = [
         WorkoutExercise(
             workout_id=workout_one.id,
             exercise_id=pushups.id,
@@ -103,8 +90,11 @@ with app.app_context():
             duration_seconds=0,
         ),
     ]
-
-    db.session.add_all(links)
+    db.session.add_all(workout_exercises)
     db.session.commit()
 
-    print("Seeded exercises, workouts, and workout_exercises successfully.")
+    print(
+        f"Seeded {len(exercises)} exercises, "
+        f"{len(workouts)} workouts, and "
+        f"{len(workout_exercises)} workout_exercises."
+    )
