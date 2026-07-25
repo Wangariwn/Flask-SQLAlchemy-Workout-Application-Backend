@@ -134,7 +134,23 @@ def get_exercise(id):
 @app.route("/exercises", methods=["POST"])
 def create_exercise():
     """Create an exercise"""
-    return make_response({"message": "Create an exercise"}, 201)
+    json_data = request.get_json()
+    if not json_data:
+        return error_response("Request body must be JSON")
+
+    try:
+        exercise = exercise_schema.load(json_data)
+        db.session.add(exercise)
+        db.session.commit()
+        return make_response(exercise_schema.dump(exercise), 201)
+    except ValidationError as err:
+        return error_response(err.messages)
+    except ValueError as err:
+        db.session.rollback()
+        return error_response(str(err))
+    except IntegrityError:
+        db.session.rollback()
+        return error_response("Exercise name must be unique")
 
 
 @app.route("/exercises/<int:id>", methods=["DELETE"])
