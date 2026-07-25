@@ -29,12 +29,18 @@ class Exercise(db.Model, SerializerMixin):
     category = db.Column(db.String(50), nullable=False)
     equipment_needed = db.Column(db.Boolean, nullable=False, default=False)
 
+    # An Exercise has many WorkoutExercises
     workout_exercises = db.relationship(
         "WorkoutExercise",
         back_populates="exercise",
         cascade="all, delete-orphan",
     )
-    workouts = association_proxy("workout_exercises", "workout")
+    # An Exercise has many Workouts through WorkoutExercises
+    workouts = association_proxy(
+        "workout_exercises",
+        "workout",
+        creator=lambda workout: WorkoutExercise(workout=workout),
+    )
 
     @validates("name")
     def validate_name(self, key, name):
@@ -76,12 +82,18 @@ class Workout(db.Model, SerializerMixin):
     duration_minutes = db.Column(db.Integer, nullable=False)
     notes = db.Column(db.Text)
 
+    # A Workout has many WorkoutExercises
     workout_exercises = db.relationship(
         "WorkoutExercise",
         back_populates="workout",
         cascade="all, delete-orphan",
     )
-    exercises = association_proxy("workout_exercises", "exercise")
+    # A Workout has many Exercises through WorkoutExercises
+    exercises = association_proxy(
+        "workout_exercises",
+        "exercise",
+        creator=lambda exercise: WorkoutExercise(exercise=exercise),
+    )
 
     @validates("date")
     def validate_date(self, key, date):
@@ -137,7 +149,9 @@ class WorkoutExercise(db.Model, SerializerMixin):
     sets = db.Column(db.Integer, nullable=False, default=0)
     duration_seconds = db.Column(db.Integer, nullable=False, default=0)
 
+    # A WorkoutExercise belongs to a Workout
     workout = db.relationship("Workout", back_populates="workout_exercises")
+    # A WorkoutExercise belongs to an Exercise
     exercise = db.relationship("Exercise", back_populates="workout_exercises")
 
     @validates("reps", "sets", "duration_seconds")
