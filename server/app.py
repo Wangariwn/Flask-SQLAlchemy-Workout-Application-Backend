@@ -46,10 +46,22 @@ def get_workout(id):
     """Show a single workout with its associated exercises
     Stretch goal: include reps/sets/duration data from WorkoutExercises
     """
-    return make_response(
-        {"message": f"Show workout {id} with associated exercises"},
-        200,
-    )
+    workout = db.session.get(Workout, id)
+    if not workout:
+        return error_response("Workout not found", 404)
+
+    data = workout_schema.dump(workout)
+    data["exercises"] = [
+        {
+            **exercise_schema.dump(we.exercise),
+            "reps": we.reps,
+            "sets": we.sets,
+            "duration_seconds": we.duration_seconds,
+            "workout_exercise_id": we.id,
+        }
+        for we in workout.workout_exercises
+    ]
+    return make_response(data, 200)
 
 
 @app.route("/workouts", methods=["POST"])
